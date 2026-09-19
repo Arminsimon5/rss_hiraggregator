@@ -10,7 +10,7 @@ def clean_html(text):
     return clean_text
 
 
-def read_rss(rss_url):
+def read_rss(source_name, rss_url):
     feed = feedparser.parse(rss_url)
 
     articles = []
@@ -20,7 +20,8 @@ def read_rss(rss_url):
             "title": article.get("title", "Nincs cím"),
             "link": article.get("link", "Nincs link"),
             "published": article.get("published", "Nincs dátum"),
-            "summary": article.get("summary", "Nincs leírás")
+            "summary": clean_html(article.get("summary", "")),
+            "source": source_name
         }
 
         articles.append(news)

@@ -12,7 +12,8 @@ def create_database():
             title TEXT NOT NULL,
             link TEXT NOT NULL UNIQUE,
             published TEXT,
-            summary TEXT
+            summary TEXT,
+            source TEXT NOT NULL
         )
     """)
 
@@ -30,14 +31,16 @@ def save_article(article):
             title,
             link,
             published,
-            summary
+            summary,
+            source
         )
-        VALUES (?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?)
     """, (
         article["title"],
         article["link"],
         article["published"],
-        article["summary"]
+        article["summary"],
+        article["source"]
     ))
 
     connection.commit()
@@ -50,7 +53,7 @@ def get_articles():
     cursor = connection.cursor()
 
     cursor.execute("""
-        SELECT id, title, link, published, summary
+        SELECT id, title, link, published, summary, source
         FROM articles
         ORDER BY id DESC
     """)

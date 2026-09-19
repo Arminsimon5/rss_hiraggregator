@@ -1,20 +1,39 @@
 from rss_reader import read_rss
 from database import create_database, save_article, get_articles
+from sources import RSS_SOURCES
 
-
-rss_url = "https://www.vezess.hu/feed/"
 
 create_database()
 
-articles = read_rss(rss_url)
 
-for article in articles:
-    save_article(article)
+for source in RSS_SOURCES:
+
+    print("Beolvasás:", source["name"])
+
+    try:
+        articles = read_rss(
+            source["name"],
+            source["url"]
+        )
+
+        for article in articles:
+            save_article(article)
+
+        print("Sikeres beolvasás:", len(articles), "hír")
+
+    except Exception as error:
+        print("Hiba a forrás beolvasásakor:", error)
+
+
+print()
+print("Hírek elmentve.")
+print()
+
 
 saved_articles = get_articles()
 
 for article in saved_articles:
-    print("ID:", article["id"])
+    print("Forrás:", article["source"])
     print("Cím:", article["title"])
     print("Link:", article["link"])
     print("Dátum:", article["published"])

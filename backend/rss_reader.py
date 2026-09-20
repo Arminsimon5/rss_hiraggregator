@@ -1,5 +1,6 @@
 import feedparser
 import re
+from backend.categorizer import categorize_article
 
 def clean_html(text):
     if not text:
@@ -16,12 +17,18 @@ def read_rss(source_name, rss_url):
     articles = []
 
     for article in feed.entries:
+        title = article.get("title", "Nincs cím")
+        summary = clean_html(article.get("summary", ""))
+
+        category = categorize_article(title, summary)
+
         news = {
             "title": article.get("title", "Nincs cím"),
             "link": article.get("link", "Nincs link"),
             "published": article.get("published", "Nincs dátum"),
             "summary": clean_html(article.get("summary", "")),
-            "source": source_name
+            "source": source_name,
+            "category": category
         }
 
         articles.append(news)

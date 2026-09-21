@@ -8,45 +8,51 @@ function App() {
   const [darkMode, setDarkMode] = useState(false);
   const [search, setSearch] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
-
-  useEffect(() => {
-  const params = new URLSearchParams()
-
-  if (search) {
-    params.append("search", search)
-  }
-
-  if (selectedCategory) {
-    params.append("category", selectedCategory)
-  }
-
-  if (selectedSource) {
-    params.append("source", selectedSource)
-  }
-
-  const queryString = params.toString()
-
-  const url = queryString
-    ? `/api/articles?${queryString}`
-    : "/api/articles"
-
-  fetch(url)
-    .then((response) => response.json())
-    .then((data) => setArticles(data))
-    .catch((error) => {
-      console.error("Hiba a hírek lekérésekor:", error)
-    })
-  }, [search, selectedCategory, selectedSource])
-
   const categories = [
     "Összes",
-    ...new Set(articles.map((article) => article.category))
+    "Elektromos autók",
+    "Motorsport",
+    "Autótesztek",
+    "Új autók",
+    "Tuning",
+    "Közlekedés",
+    "Egyéb"
   ];
 
   const sources = [
     "Összes",
-    ...new Set(articles.map((article) => article.source))
-  ];
+    "Vezess",
+    "Autónavigátor"
+  ];  
+
+  useEffect(() => {
+    const params = new URLSearchParams()
+
+    if (debouncedSearch) {
+      params.append("search", debouncedSearch)
+    }
+
+    if (selectedCategory !== "Összes") {
+      params.append("category", selectedCategory)
+    }
+
+    if (selectedSource !== "Összes") {
+      params.append("source", selectedSource)
+    }
+
+    const queryString = params.toString()
+
+    const url = queryString
+      ? `/api/articles?${queryString}`
+      : "/api/articles"
+
+    fetch(url)
+      .then((response) => response.json())
+      .then((data) => setArticles(data))
+      .catch((error) => {
+        console.error("Hiba a hírek lekérésekor:", error)
+      })
+  }, [debouncedSearch, selectedCategory, selectedSource])
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(search)
@@ -59,16 +65,19 @@ function App() {
 
   return (
     <div className={darkMode ? "app dark" : "app"}>
-<     header className="top-section">
+      <header className="top-section">
        <div className="top-bar">
          <h1>Autós Hírek</h1>
-
-         <button
-           className="theme-button"
-           onClick={() => setDarkMode(!darkMode)}
-         >
-           {darkMode ? "Világos mód" : "Sötét mód"}
-         </button>
+          <button
+            className="theme-toggle"
+            onClick={() => setDarkMode(!darkMode)}
+            aria-label={darkMode ? "Világos mód" : "Sötét mód"}
+          >
+            <img
+              src={darkMode ? "/sun.svg" : "/moon.svg"}
+              alt=""
+            />
+          </button>
        </div>
 
        <div className="filters">
@@ -104,7 +113,7 @@ function App() {
       </header>
 
       <main className="article-list">
-        {filteredArticles.map((article) => (
+        {articles.map((article) => (
         <article
           className="article-card"
           key={article.id}

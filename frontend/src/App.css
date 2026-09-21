@@ -83,6 +83,34 @@ body {
 
   transform: translateY(-50%);
 }
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  right: 0;
+
+  width: 2.75rem;
+  height: 2.75rem;
+
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+
+  background: transparent;
+  cursor: pointer;
+}
+
+.theme-toggle img {
+  width: 1.6rem;
+  height: 1.6rem;
+
+  object-fit: contain;
+}
+
+.theme-toggle:hover {
+  transform: scale(1.08);
+}
 
 .filters {
   display: flex;

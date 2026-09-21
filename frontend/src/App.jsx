@@ -49,7 +49,7 @@ function App() {
     <div className={darkMode ? "app dark" : "app"}>
 <     header className="top-section">
        <div className="top-bar">
-         <h1>Autós Híraggregátor</h1>
+         <h1>Autós Hírek</h1>
 
          <button
            className="theme-button"

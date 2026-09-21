@@ -1,16 +1,23 @@
-from pathlib import Path
+import os
 import sqlite3
+from pathlib import Path
 
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-DATABASE_DIR = BASE_DIR / "database"
-DATABASE_PATH = DATABASE_DIR / "news.db"
+DATABASE_PATH = Path(
+    os.getenv("DATABASE_PATH", "news.db")
+)
 
+
+def get_connection():
+    DATABASE_PATH.parent.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    return sqlite3.connect(DATABASE_PATH)
 
 def create_database():
-    DATABASE_DIR.mkdir(exist_ok=True)
-
-    connection = sqlite3.connect(DATABASE_PATH)
+    connection = get_connection()
 
     cursor = connection.cursor()
 
@@ -31,8 +38,7 @@ def create_database():
 
 
 def save_article(article):
-    connection = sqlite3.connect(DATABASE_PATH)
-
+    connection = get_connection()
     cursor = connection.cursor()
 
     cursor.execute("""
@@ -54,29 +60,15 @@ def save_article(article):
         article["category"]
     ))
 
+    inserted = cursor.rowcount == 1
+
     connection.commit()
     connection.close()
 
-def get_articles():
-    connection = sqlite3.connect(DATABASE_PATH)
-    connection.row_factory = sqlite3.Row
-
-    cursor = connection.cursor()
-
-    cursor.execute("""
-        SELECT id, title, link, published, summary, source, category
-        FROM articles
-        ORDER BY id DESC
-    """)
-
-    articles = cursor.fetchall()
-
-    connection.close()
-
-    return articles
+    return inserted
 
 def get_articles_by_source(source):
-    connection = sqlite3.connect(DATABASE_PATH)
+    connection = get_connection()
     connection.row_factory = sqlite3.Row
 
     cursor = connection.cursor()
@@ -95,7 +87,7 @@ def get_articles_by_source(source):
     return articles
 
 def search_articles(search_text):
-    connection = sqlite3.connect(DATABASE_PATH)
+    connection = get_connection()
     connection.row_factory = sqlite3.Row
 
     cursor = connection.cursor()
@@ -117,7 +109,7 @@ def search_articles(search_text):
     return articles
 
 def get_articles_by_category(category):
-    connection = sqlite3.connect(DATABASE_PATH)
+    connection = get_connection()
     connection.row_factory = sqlite3.Row
 
     cursor = connection.cursor()

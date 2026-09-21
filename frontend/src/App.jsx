@@ -9,7 +9,7 @@ function App() {
   const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
-    fetch("http://localhost:8000/articles")
+    fetch("/api/articles")
       .then((response) => response.json())
       .then((data) => {
         setArticles(data);

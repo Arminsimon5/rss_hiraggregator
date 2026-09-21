@@ -1,6 +1,6 @@
 import feedparser
 import re
-from backend.categorizer import categorize_article
+from categorizer import categorize_article
 
 def clean_html(text):
     if not text:

@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from database import create_database, get_articles, save_article
+from database import create_database, filter_articles, save_article
 from rss_reader import read_rss
 from sources import RSS_SOURCES
 
@@ -91,8 +91,16 @@ app.add_middleware(
 
 
 @app.get("/articles")
-def articles():
-    rows = get_articles()
+def articles(
+    search: str | None = None,
+    category: str | None = None,
+    source: str | None = None
+):
+    rows = filter_articles(
+        search=search,
+        category=category,
+        source=source
+    )
 
     result = []
 
@@ -109,7 +117,7 @@ def articles():
 
     return result
 
-
+    
 @app.post("/refresh")
 def refresh_articles():
     result = refresh_all_articles()

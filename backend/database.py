@@ -150,3 +150,48 @@ def get_articles_by_category(category):
     connection.close()
 
     return articles
+
+def filter_articles(search=None, category=None, source=None):
+    connection = get_connection()
+    connection.row_factory = sqlite3.Row
+
+    cursor = connection.cursor()
+
+    query = """
+        SELECT id, title, link, published, summary, source, category
+        FROM articles
+        WHERE 1=1
+    """
+
+    parameters = []
+
+    if search:
+        query += """
+            AND (title LIKE ? OR summary LIKE ?)
+        """
+        parameters.append(f"%{search}%")
+        parameters.append(f"%{search}%")
+
+    if category:
+        query += """
+            AND category = ?
+        """
+        parameters.append(category)
+
+    if source:
+        query += """
+            AND source = ?
+        """
+        parameters.append(source)
+
+    query += """
+        ORDER BY id DESC
+    """
+
+    cursor.execute(query, parameters)
+
+    articles = cursor.fetchall()
+
+    connection.close()
+
+    return articles

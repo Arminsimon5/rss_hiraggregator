@@ -3,37 +3,40 @@ import "./App.css";
 
 function App() {
   const [articles, setArticles] = useState([]);
-  const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Összes");
   const [selectedSource, setSelectedSource] = useState("Összes");
   const [darkMode, setDarkMode] = useState(false);
+  const [search, setSearch] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
 
   useEffect(() => {
-    fetch("/api/articles")
-      .then((response) => response.json())
-      .then((data) => {
-        setArticles(data);
-      })
-      .catch((error) => {
-        console.error("Hiba a hírek lekérésekor:", error);
-      });
-  }, []);
+  const params = new URLSearchParams()
 
-  const filteredArticles = articles.filter((article) => {
-    const matchesSearch = article.title
-      .toLowerCase()
-      .includes(search.toLowerCase());
+  if (search) {
+    params.append("search", search)
+  }
 
-    const matchesCategory =
-      selectedCategory === "Összes" ||
-      article.category === selectedCategory;
+  if (selectedCategory) {
+    params.append("category", selectedCategory)
+  }
 
-    const matchesSource =
-      selectedSource === "Összes" ||
-      article.source === selectedSource;
+  if (selectedSource) {
+    params.append("source", selectedSource)
+  }
 
-    return matchesSearch && matchesCategory && matchesSource;
-  });
+  const queryString = params.toString()
+
+  const url = queryString
+    ? `/api/articles?${queryString}`
+    : "/api/articles"
+
+  fetch(url)
+    .then((response) => response.json())
+    .then((data) => setArticles(data))
+    .catch((error) => {
+      console.error("Hiba a hírek lekérésekor:", error)
+    })
+  }, [search, selectedCategory, selectedSource])
 
   const categories = [
     "Összes",
@@ -44,6 +47,15 @@ function App() {
     "Összes",
     ...new Set(articles.map((article) => article.source))
   ];
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search)
+    }, 300)
+
+    return () => {
+      clearTimeout(timer)
+    }
+  }, [search])
 
   return (
     <div className={darkMode ? "app dark" : "app"}>

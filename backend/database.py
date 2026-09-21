@@ -36,6 +36,30 @@ def create_database():
     connection.commit()
     connection.close()
 
+def get_articles():
+    connection = get_connection()
+    connection.row_factory = sqlite3.Row
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT
+            id,
+            title,
+            link,
+            published,
+            summary,
+            source,
+            category
+        FROM articles
+        ORDER BY id DESC
+    """)
+
+    articles = cursor.fetchall()
+
+    connection.close()
+
+    return articles
 
 def save_article(article):
     connection = get_connection()

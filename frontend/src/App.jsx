@@ -2,12 +2,16 @@ import { useEffect, useState } from "react";
 import "./App.css";
 
 function App() {
-  const [articles, setArticles] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState("Összes");
-  const [selectedSource, setSelectedSource] = useState("Összes");
-  const [darkMode, setDarkMode] = useState(false);
+  const [articles, setArticles] = useState([])
+  const [selectedCategory, setSelectedCategory] = useState("Összes")
+  const [selectedSource, setSelectedSource] = useState("Összes")
   const [search, setSearch] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+  const [darkMode, setDarkMode] = useState(() => {
+  return localStorage.getItem("theme") === "dark"
+  })
   const categories = [
     "Összes",
     "Elektromos autók",
@@ -24,7 +28,9 @@ function App() {
     "Vezess",
     "Autónavigátor"
   ];  
-
+  useEffect(() => {
+    localStorage.setItem("theme", darkMode ? "dark" : "light")
+  }, [darkMode])
   useEffect(() => {
     const params = new URLSearchParams()
 
@@ -46,11 +52,27 @@ function App() {
       ? `/api/articles?${queryString}`
       : "/api/articles"
 
+    
+    setLoading(true)
+    setError("")
+
     fetch(url)
-      .then((response) => response.json())
-      .then((data) => setArticles(data))
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Nem sikerült lekérni a híreket.")
+        }
+
+        return response.json()
+      })
+      .then((data) => {
+        setArticles(data)
+      })
       .catch((error) => {
         console.error("Hiba a hírek lekérésekor:", error)
+        setError("Nem sikerült betölteni a híreket.")
+      })
+      .finally(() => {
+        setLoading(false)
       })
   }, [debouncedSearch, selectedCategory, selectedSource])
   useEffect(() => {
@@ -113,21 +135,39 @@ function App() {
       </header>
 
       <main className="article-list">
-        {articles.map((article) => (
-        <article
-          className="article-card"
-          key={article.id}
-          onClick={() => window.open(article.link, "_blank")}
-        >
-          <div className="article-meta">
-            <span>{article.source}</span>
-            <span>{article.category}</span>
-          </div>
-                
-          <h2>{article.title}</h2>
-                
-          <p>{article.summary}</p>
-        </article>
+        {loading && (
+          <p className="status-message">
+            Hírek betöltése...
+          </p>
+        )}
+      
+        {error && (
+          <p className="status-message error-message">
+            {error}
+          </p>
+        )}
+      
+        {!loading && !error && articles.length === 0 && (
+          <p className="status-message">
+            Nincs találat.
+          </p>
+        )}
+      
+        {!loading && !error && articles.map((article) => (
+          <article
+            className="article-card"
+            key={article.id}
+            onClick={() => window.open(article.link, "_blank")}
+          >
+            <div className="article-meta">
+              <span>{article.source}</span>
+              <span>{article.category}</span>
+            </div>
+        
+            <h2>{article.title}</h2>
+        
+            <p>{article.summary}</p>
+          </article>
         ))}
       </main>
     </div>

@@ -4,9 +4,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from database import create_database, filter_articles, save_article
-from rss_reader import read_rss
+from database import create_database, filter_articles, save_article, normalize_existing_dates, count_articles, get_categories, get_sources
 from sources import RSS_SOURCES
+from rss_reader import read_rss
 
 
 def refresh_all_articles():
@@ -63,6 +63,7 @@ async def automatic_refresh():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     create_database()
+    normalize_existing_dates()
 
     refresh_task = asyncio.create_task(
         automatic_refresh()
@@ -94,18 +95,31 @@ app.add_middleware(
 def articles(
     search: str | None = None,
     category: str | None = None,
-    source: str | None = None
+    source: str | None = None,
+    period: str | None = None,
+    limit: int = 20,
+    offset: int = 0
 ):
     rows = filter_articles(
         search=search,
         category=category,
-        source=source
+        source=source,
+        period=period,
+        limit=limit,
+        offset=offset
+    )
+    
+    total = count_articles(
+        search=search,
+        category=category,
+        source=source,
+        period=period
     )
 
-    result = []
+    items = []
 
     for article in rows:
-        result.append({
+        items.append({
             "id": article["id"],
             "title": article["title"],
             "link": article["link"],
@@ -115,7 +129,12 @@ def articles(
             "category": article["category"]
         })
 
-    return result
+    return {
+        "items": items,
+        "total": total,
+        "limit": limit,
+        "offset": offset
+    }
 
     
 @app.post("/refresh")
@@ -127,3 +146,12 @@ def refresh_articles():
         "processed": result["processed"],
         "inserted": result["inserted"]
     }
+
+@app.get("/categories")
+def categories():
+    return get_categories()
+
+
+@app.get("/sources")
+def sources():
+    return get_sources()

@@ -1,12 +1,61 @@
 import os
 import sqlite3
 from pathlib import Path
+from datetime import datetime, timedelta, timezone
+from email.utils import parsedate_to_datetime
 
 
 DATABASE_PATH = Path(
     os.getenv("DATABASE_PATH", "news.db")
 )
 
+def normalize_existing_dates():
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT id, published
+        FROM articles
+        WHERE published IS NOT NULL
+    """)
+
+    articles = cursor.fetchall()
+
+    for article_id, published in articles:
+        if not published:
+            continue
+
+        try:
+            # Ha már ISO formátumú, nem kell módosítani
+            datetime.fromisoformat(published)
+            continue
+        except ValueError:
+            pass
+
+        try:
+            date = parsedate_to_datetime(published)
+
+            if date.tzinfo is None:
+                date = date.replace(tzinfo=timezone.utc)
+
+            normalized = date.astimezone(timezone.utc).isoformat()
+
+            cursor.execute("""
+                UPDATE articles
+                SET published = ?
+                WHERE id = ?
+            """, (
+                normalized,
+                article_id
+            ))
+
+        except (TypeError, ValueError):
+            print(
+                f"Nem sikerült feldolgozni a dátumot: {published}"
+            )
+
+    connection.commit()
+    connection.close()
 
 def get_connection():
     DATABASE_PATH.parent.mkdir(
@@ -151,7 +200,7 @@ def get_articles_by_category(category):
 
     return articles
 
-def filter_articles(search=None, category=None, source=None):
+def filter_articles(search=None, category=None, source=None, period=None, offset=0, limit=20):
     connection = get_connection()
     connection.row_factory = sqlite3.Row
 
@@ -184,9 +233,38 @@ def filter_articles(search=None, category=None, source=None):
         """
         parameters.append(source)
 
+    if period:
+        now = datetime.now(timezone.utc)
+
+        if period == "today":
+            start_date = now - timedelta(days=1)
+
+        elif period == "week":
+            start_date = now - timedelta(days=7)
+
+        elif period == "month":
+            start_date = now - timedelta(days=30)
+
+        elif period == "year":
+            start_date = now - timedelta(days=365)
+
+        else:
+            start_date = None
+
+        if start_date:
+            query += """
+                AND published >= ?
+            """
+            parameters.append(start_date.isoformat())
+
     query += """
         ORDER BY id DESC
+        LIMIT ?
+        OFFSET ?
     """
+
+    parameters.append(limit)
+    parameters.append(offset)
 
     cursor.execute(query, parameters)
 
@@ -195,3 +273,112 @@ def filter_articles(search=None, category=None, source=None):
     connection.close()
 
     return articles
+
+def count_articles(
+    search=None,
+    category=None,
+    source=None,
+    period=None
+):
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    query = """
+        SELECT COUNT(*)
+        FROM articles
+        WHERE 1=1
+    """
+
+    parameters = []
+
+    if search:
+        query += """
+            AND (title LIKE ? OR summary LIKE ?)
+        """
+        parameters.append(f"%{search}%")
+        parameters.append(f"%{search}%")
+
+    if category:
+        query += """
+            AND category = ?
+        """
+        parameters.append(category)
+
+    if source:
+        query += """
+            AND source = ?
+        """
+        parameters.append(source)
+
+    if period:
+        now = datetime.now(timezone.utc)
+
+        if period == "today":
+            start_date = now - timedelta(days=1)
+
+        elif period == "week":
+            start_date = now - timedelta(days=7)
+
+        elif period == "month":
+            start_date = now - timedelta(days=30)
+
+        elif period == "year":
+            start_date = now - timedelta(days=365)
+
+        else:
+            start_date = None
+
+        if start_date:
+            query += """
+                AND published >= ?
+            """
+            parameters.append(start_date.isoformat())
+
+    cursor.execute(query, parameters)
+
+    count = cursor.fetchone()[0]
+
+    connection.close()
+
+    return count
+
+def get_categories():
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT DISTINCT category
+        FROM articles
+        WHERE category IS NOT NULL
+        ORDER BY category
+    """)
+
+    categories = [
+        row[0]
+        for row in cursor.fetchall()
+    ]
+
+    connection.close()
+
+    return categories
+
+def get_sources():
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT DISTINCT source
+        FROM articles
+        WHERE source IS NOT NULL
+        ORDER BY source
+    """)
+
+    sources = [
+        row[0]
+        for row in cursor.fetchall()
+    ]
+
+    connection.close()
+
+    return sources

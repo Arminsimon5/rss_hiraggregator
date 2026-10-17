@@ -214,3 +214,47 @@ body {
 
   font-weight: 600;
 }
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
+.pagination button {
+  padding: 0.6rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--card-background);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.pagination button:hover:not(:disabled) {
+  background: var(--card-hover);
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+@media (max-width: 600px) {
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .theme-toggle {
+    position: static;
+    flex-shrink: 0;
+  }
+
+  .top-bar h1 {
+    margin: 0;
+    text-align: left;
+    font-size: clamp(1.5rem, 7vw, 2rem);
+  }
+}

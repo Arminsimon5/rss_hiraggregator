@@ -61,6 +61,7 @@ function App() {
       params.append("period", selectedPeriod)
     }
 
+
     const queryString = params.toString()
 
     const url = queryString
@@ -71,36 +72,44 @@ function App() {
 
     params.append("limit", pageSize)
     params.append("offset", offset)
-
-
-
     
-    setLoading(true)
-    setError("")
-
-    fetch(url)
-      .then((response) => {
+    const loadArticles = async () => {
+      await Promise.resolve()
+      
+      setLoading(true)
+      setError("")
+      
+      try {
+        const response = await fetch(url)
+      
         if (!response.ok) {
           throw new Error("Nem sikerült lekérni a híreket.")
         }
-
-        return response.json()
-      })
-      .then((data) => {
+      
+        const data = await response.json()
+      
         setArticles(data.items)
         setTotal(data.total)
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error("Hiba a hírek lekérésekor:", error)
         setError("Nem sikerült betölteni a híreket.")
-      })
-      .finally(() => {
+      } finally {
         setLoading(false)
-      })
-  }, [debouncedSearch, selectedCategory, selectedSource, selectedPeriod, page])
+      }
+    }
+  
+    loadArticles()
+  }, [
+    debouncedSearch,
+    selectedCategory,
+    selectedSource,
+    selectedPeriod,
+    page
+  ])
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(search)
+      setPage(1)
     }, 300)
 
     return () => {
@@ -108,9 +117,6 @@ function App() {
     }
   }, [search])
 
-  useEffect(() => {
-    setPage(1)
-  }, [debouncedSearch, selectedCategory, selectedSource, selectedPeriod])
   const totalPages = Math.ceil(total / pageSize)
   return (
     <div className={darkMode ? "app dark" : "app"}>
@@ -134,12 +140,16 @@ function App() {
            type="text"
            placeholder="Keresés a hírek között..."
            value={search}
-           onChange={(event) => setSearch(event.target.value)}
+           onChange={(event) => {setSearch(event.target.value)
+           setPage(1)
+           }}
          />
 
          <select
            value={selectedCategory}
-           onChange={(event) => setSelectedCategory(event.target.value)}
+           onChange={(event) => {setSelectedCategory(event.target.value)
+           setPage(1)
+           }}
          >
            <option value="Összes">Összes kategória</option>
 
@@ -151,7 +161,9 @@ function App() {
          </select>
          <select
            value={selectedPeriod}
-           onChange={(event) => setSelectedPeriod(event.target.value)}
+           onChange={(event) => {setSelectedPeriod(event.target.value)
+           setPage(1)
+           }}
          >
            {periods.map((period) => (
              <option key={period.value} value={period.value}>
@@ -161,10 +173,12 @@ function App() {
          </select>
          <select
            value={selectedSource}
-           onChange={(event) => setSelectedSource(event.target.value)}
+           onChange={(event) => {setSelectedSource(event.target.value)
+           setPage(1)
+           }}
          >
            <option value="Összes">Összes forrás</option>
-           
+
            {sources.map((source) => (
              <option key={source} value={source}>
                {source}

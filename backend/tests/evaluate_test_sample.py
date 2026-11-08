@@ -6,6 +6,9 @@ from categorizer import categorize_article
 
 INPUT_FILE = "test_sample_filled.csv"
 
+true_positive = defaultdict(int)
+false_positive = defaultdict(int)
+false_negative = defaultdict(int)
 
 def evaluate():
     total = 0

@@ -7,7 +7,7 @@ from database import get_connection
 DEVELOPMENT_FILE = "evaluation_sample_filled.csv"
 OUTPUT_FILE = "test_sample.csv"
 
-SAMPLE_SIZE = 95
+SAMPLE_SIZE = 100
 RANDOM_SEED = 42
 
 

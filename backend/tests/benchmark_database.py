@@ -2,6 +2,7 @@ import os
 import sqlite3
 import time
 from pathlib import Path
+from datetime import datetime, timedelta, timezone
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -109,7 +110,7 @@ def measure_all(database_path):
         FROM articles
         WHERE published >= ?
         """,
-        ("2026-11-01T00:00:00+00:00",)
+        ("2026-11-03T00:00:00+00:00",)
     )
 
     results["Lapozás 20 rekord"] = measure_query(
@@ -153,11 +154,15 @@ def insert_test_data(database_path, count):
         "Alapjárat"
     ]
 
+    base_date = datetime(2026, 11, 10, tzinfo=timezone.utc)
+
     for i in range(count):
+        published_date = base_date - timedelta(hours=i)
+    
         articles.append((
             f"Teszt hír {i}",
             f"https://example.com/article/{i}",
-            "2026-11-08T12:00:00+00:00",
+            published_date.isoformat(),
             f"Ez a {i}. teszt hír összefoglalója Mazda elektromos autó témában.",
             sources[i % len(sources)],
             categories[i % len(categories)]
@@ -268,6 +273,97 @@ def run_benchmark(record_count):
             f"{new:.3f} ms "
             f"({improvement:+.2f}%)"
         )
+    if record_count == 10000:
+        print()
+        print("--- INDEX NÉLKÜLI QUERY PLAN ---")
+        explain_queries(DATABASE_NO_INDEX)
+        
+        print()
+        print("--- INDEXELT QUERY PLAN ---")
+        explain_queries(DATABASE_INDEXED)
+
+def explain_query_plan(
+    database_path,
+    name,
+    query,
+    parameters=()
+):
+    connection = sqlite3.connect(database_path)
+    cursor = connection.cursor()
+
+    cursor.execute(
+        f"EXPLAIN QUERY PLAN {query}",
+        parameters
+    )
+
+    rows = cursor.fetchall()
+
+    connection.close()
+
+    print(f"\n{name}:")
+
+    for row in rows:
+        print(f"  {row[3]}")
+
+def explain_queries(database_path):
+    print()
+    print("=== EXPLAIN QUERY PLAN ===")
+
+    explain_query_plan(
+        database_path,
+        "Kategória szűrés",
+        """
+        SELECT *
+        FROM articles
+        WHERE category = ?
+        """,
+        ("Motorsport",)
+    )
+
+    explain_query_plan(
+        database_path,
+        "Forrás szűrés",
+        """
+        SELECT *
+        FROM articles
+        WHERE source = ?
+        """,
+        ("Vezess",)
+    )
+
+    explain_query_plan(
+        database_path,
+        "Időszűrés",
+        """
+        SELECT *
+        FROM articles
+        WHERE published >= ?
+        """,
+        ("2026-11-03T00:00:00+00:00",)
+    )
+
+    explain_query_plan(
+        database_path,
+        "Lapozás",
+        """
+        SELECT *
+        FROM articles
+        ORDER BY published DESC
+        LIMIT 20 OFFSET 0
+        """
+    )
+
+    explain_query_plan(
+        database_path,
+        "Szöveges keresés",
+        """
+        SELECT *
+        FROM articles
+        WHERE title LIKE ?
+           OR summary LIKE ?
+        """,
+        ("%Mazda%", "%Mazda%")
+    )
 
 if __name__ == "__main__":
     for size in [

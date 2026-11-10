@@ -81,6 +81,20 @@ def create_database():
             category TEXT NOT NULL
         )
     """)
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_articles_category
+        ON articles(category)
+    """)
+    
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_articles_source
+        ON articles(source)
+    """)
+    
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_articles_published
+        ON articles(published)
+    """)
 
     connection.commit()
     connection.close()
@@ -258,7 +272,7 @@ def filter_articles(search=None, category=None, source=None, period=None, offset
             parameters.append(start_date.isoformat())
 
     query += """
-        ORDER BY id DESC
+        ORDER BY published DESC, id DESC
         LIMIT ?
         OFFSET ?
     """

@@ -257,4 +257,22 @@ body {
     text-align: left;
     font-size: clamp(1.5rem, 7vw, 2rem);
   }
+  
+}
+.article-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.article-meta {
+  display: flex;
+  gap: 1rem;
+}
+
+.article-date {
+  font-size: 0.85rem;
+  opacity: 0.65;
+  white-space: nowrap;
 }

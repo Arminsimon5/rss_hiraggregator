@@ -1,6 +1,22 @@
 import { useEffect, useState } from "react";
 import "./App.css";
 
+function formatPublishedDate(dateString) {
+  if (!dateString) {
+    return "Ismeretlen dátum";
+  }
+
+  const date = new Date(dateString);
+
+  return new Intl.DateTimeFormat("hu-HU", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
 function App() {
   const [articles, setArticles] = useState([])
   const [selectedCategory, setSelectedCategory] = useState("Összes")
@@ -62,16 +78,14 @@ function App() {
     }
 
 
-    const queryString = params.toString()
-
-    const url = queryString
-      ? `/api/articles?${queryString}`
-      : "/api/articles"
-
     const offset = (page - 1) * pageSize
-
+      
     params.append("limit", pageSize)
     params.append("offset", offset)
+      
+    const queryString = params.toString()
+      
+    const url = `/api/articles?${queryString}`
     
     const loadArticles = async () => {
       await Promise.resolve()
@@ -213,9 +227,15 @@ function App() {
             key={article.id}
             onClick={() => window.open(article.link, "_blank")}
           >
-            <div className="article-meta">
-              <span>{article.source}</span>
-              <span>{article.category}</span>
+            <div className="article-header">
+              <div className="article-meta">
+                <span>{article.source}</span>
+                <span>{article.category}</span>
+              </div>
+
+              <span className="article-date">
+                {formatPublishedDate(article.published)}
+              </span>
             </div>
         
             <h2>{article.title}</h2>

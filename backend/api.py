@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import Query
 
 from database import create_database, filter_articles, save_article, normalize_existing_dates, count_articles, get_categories, get_sources
 from sources import RSS_SOURCES
@@ -97,8 +98,8 @@ def articles(
     category: str | None = None,
     source: str | None = None,
     period: str | None = None,
-    limit: int = 20,
-    offset: int = 0
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0)
 ):
     rows = filter_articles(
         search=search,

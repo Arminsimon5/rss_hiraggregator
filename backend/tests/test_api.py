@@ -1,11 +1,12 @@
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
+from fastapi import Query
 
 import database
 from api import app
-
 
 TEST_DATABASE_PATH = Path(__file__).resolve().parent / "test_news.db"
 
@@ -152,3 +153,70 @@ def test_articles_period_filter():
 
     assert "items" in data
     assert "total" in data
+
+def test_articles_unknown_category():
+    response = client.get(
+        "/articles?category=NemLetezoKategoria"
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["total"] == 0
+    assert data["items"] == []
+
+def test_articles_negative_offset():
+    response = client.get(
+        "/articles?limit=5&offset=-1"
+    )
+
+    assert response.status_code == 422
+
+def test_articles_invalid_limit():
+    response = client.get(
+        "/articles?limit=0"
+    )
+
+    assert response.status_code == 422
+
+def test_categories_endpoint():
+    response = client.get("/categories")
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert isinstance(data, list)
+    assert "Motorsport" in data
+    assert "Új autók" in data
+
+def test_sources_endpoint():
+    response = client.get("/sources")
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert isinstance(data, list)
+    assert "Vezess" in data
+    assert "Racingline" in data
+
+def test_refresh_endpoint():
+    with patch("api.refresh_all_articles") as mock_refresh:
+        mock_refresh.return_value = {
+            "processed": 10,
+            "inserted": 3
+        }
+
+        response = client.post("/refresh")
+
+        assert response.status_code == 200
+
+        data = response.json()
+
+        assert data["message"] == "RSS frissítés kész"
+        assert data["processed"] == 10
+        assert data["inserted"] == 3
+
+        mock_refresh.assert_called_once()
